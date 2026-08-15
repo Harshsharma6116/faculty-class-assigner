@@ -1,0 +1,381 @@
+// ============================================================================
+// Faculty Class Allocation System — Prisma Schema
+// Database: PostgreSQL (Supabase-hosted, but portable to any PG provider)
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")       // Supabase pooled connection (Transaction mode)
+  directUrl = env("DIRECT_URL")         // Supabase direct connection (for migrations)
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  SUPER_ADMIN
+  SCHOOL_ADMIN
+  DEPT_ADMIN
+}
+
+enum SeniorityLevel {
+  ASSISTANT_PROFESSOR
+  ASSOCIATE_PROFESSOR
+  PROFESSOR
+  HOD
+}
+
+enum DegreeLevel {
+  UG
+  PG
+}
+
+enum ClassType {
+  LECTURE
+  LAB
+  TUTORIAL
+}
+
+enum RoomType {
+  LECTURE_HALL
+  LAB
+  SEMINAR_ROOM
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+enum ClassRequirementStatus {
+  UNASSIGNED
+  AUTO_ASSIGNED
+  MANUALLY_ASSIGNED
+  CONFLICT
+}
+
+enum AllocationRunStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+// ============================================================================
+// AUTH — User model (admins only, no faculty login in v1)
+// ============================================================================
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  hashedPassword String
+  role           UserRole
+  schoolId       String?   // Set for SCHOOL_ADMIN (scoped to one school)
+  departmentId   String?   // Set for DEPT_ADMIN (scoped to one department)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  school         School?     @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  department     Department? @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  allocationRuns AllocationRun[]
+  auditLogs      AuditLog[]
+
+  @@index([email])
+  @@index([role])
+}
+
+// ============================================================================
+// ORGANIZATIONAL HIERARCHY
+// ============================================================================
+
+model School {
+  id        String   @id @default(cuid())
+  name      String   // e.g. "Amity School of Engineering and Technology"
+  shortCode String   @unique // e.g. "ASET"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  departments Department[]
+  rooms       Room[]
+  timeSlots   TimeSlot[]
+  users       User[]
+
+  @@index([shortCode])
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String   // e.g. "Computer Science & Engineering"
+  shortCode String   // e.g. "CSE"
+  schoolId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  school    School    @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  faculty   Faculty[]
+  subjects  Subject[]
+  batches   Batch[]
+  users     User[]
+
+  @@unique([schoolId, shortCode]) // shortCode unique within a school
+  @@index([schoolId])
+}
+
+// ============================================================================
+// FACULTY
+// ============================================================================
+
+model Faculty {
+  id                         String        @id @default(cuid())
+  fullName                   String
+  email                      String        @unique
+  departmentId               String
+  seniorityLevel             SeniorityLevel
+  maxClassesPerDay           Int           @default(5)
+  maxClassesPerWeek          Int           @default(20)
+  maxContinuousClasses       Int           @default(3)
+  minGapAfterContinuousBlock Int           @default(1) // periods
+  weeklyWorkingDays          DayOfWeek[]   // Array of available days
+  dailyAvailableFrom         String?       // Time string "HH:MM", null = use institution default
+  dailyAvailableTo           String?       // Time string "HH:MM", null = use institution default
+  isActive                   Boolean       @default(true)
+  createdAt                  DateTime      @default(now())
+  updatedAt                  DateTime      @updatedAt
+
+  // Relations
+  department          Department                @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  preferredSubjects   FacultyPreferredSubject[]
+  unavailability      FacultyUnavailability[]
+  classRequirements   ClassRequirement[]
+
+  @@index([departmentId])
+  @@index([email])
+  @@index([seniorityLevel])
+}
+
+model FacultyPreferredSubject {
+  id             String @id @default(cuid())
+  facultyId      String
+  subjectId      String
+  preferenceRank Int    // 1 = most preferred
+
+  // Relations
+  faculty Faculty @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([facultyId, subjectId]) // A faculty can only prefer a subject once
+  @@index([facultyId])
+  @@index([subjectId])
+}
+
+model FacultyUnavailability {
+  id        String   @id @default(cuid())
+  facultyId String
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+  reason    String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  faculty Faculty @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+
+  @@index([facultyId])
+  @@index([startDate, endDate])
+}
+
+// ============================================================================
+// ACADEMIC ENTITIES
+// ============================================================================
+
+model Subject {
+  id                    String    @id @default(cuid())
+  name                  String    // e.g. "Data Structures"
+  code                  String    // e.g. "CS201"
+  departmentId          String
+  degreeLevel           DegreeLevel
+  classType             ClassType
+  weeklyClassesRequired Int       // Sessions per week this subject needs, per batch
+  creditHours           Int?      // Optional, informational
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relations
+  department        Department                @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  preferredBy       FacultyPreferredSubject[]
+  classRequirements ClassRequirement[]
+
+  @@unique([departmentId, code]) // Code unique within a department
+  @@index([departmentId])
+  @@index([degreeLevel])
+}
+
+model Semester {
+  id        String   @id @default(cuid())
+  name      String   // e.g. "Odd Sem 2026"
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  batches           Batch[]
+  classRequirements ClassRequirement[]
+  allocationRuns    AllocationRun[]
+
+  @@index([isActive])
+}
+
+model Batch {
+  id                   String      @id @default(cuid())
+  name                 String      // e.g. "CSE-3A"
+  departmentId         String
+  semesterId           String
+  degreeLevel          DegreeLevel
+  yearOrSemesterNumber Int         // e.g. 3 for 3rd year
+  strength             Int         // Number of students (for room capacity matching)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  // Relations
+  department        Department         @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  semester          Semester           @relation(fields: [semesterId], references: [id], onDelete: Restrict)
+  classRequirements ClassRequirement[]
+
+  @@unique([semesterId, name]) // Batch name unique within a semester
+  @@index([departmentId])
+  @@index([semesterId])
+}
+
+model Room {
+  id        String   @id @default(cuid())
+  name      String   // e.g. "Room 101", "Lab A3"
+  capacity  Int
+  roomType  RoomType
+  schoolId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  school            School             @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  classRequirements ClassRequirement[]
+
+  @@unique([schoolId, name]) // Room name unique within a school
+  @@index([schoolId])
+  @@index([roomType])
+}
+
+model TimeSlot {
+  id           String    @id @default(cuid())
+  dayOfWeek    DayOfWeek
+  periodNumber Int       // 1-8
+  startTime    String    // "HH:MM" format
+  endTime      String    // "HH:MM" format
+  schoolId     String
+  isBreak      Boolean   @default(false) // e.g. lunch break period
+  createdAt    DateTime  @default(now())
+
+  // Relations
+  school School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+
+  @@unique([schoolId, dayOfWeek, periodNumber]) // No duplicate periods
+  @@index([schoolId])
+  @@index([dayOfWeek])
+}
+
+// ============================================================================
+// ELIGIBILITY RULES (admin-editable, NOT hardcoded)
+// ============================================================================
+
+model SeniorityDegreeEligibility {
+  id             String         @id @default(cuid())
+  seniorityLevel SeniorityLevel
+  degreeLevel    DegreeLevel
+  allowed        Boolean        @default(true)
+
+  @@unique([seniorityLevel, degreeLevel]) // One rule per combination
+}
+
+// ============================================================================
+// CLASS REQUIREMENTS & ALLOCATION
+// ============================================================================
+
+model ClassRequirement {
+  id               String                 @id @default(cuid())
+  semesterId       String
+  subjectId        String
+  batchId          String
+  roomId           String
+  classType        ClassType              // Inherited from Subject or overridden
+  sessionsPerWeek  Int
+  assignedFacultyId String?               // Null until allocated
+  assignedTimeSlotIds String[]            // Array of TimeSlot IDs (one per session)
+  status           ClassRequirementStatus @default(UNASSIGNED)
+  conflictReason   String?                // Reason if status = CONFLICT
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  // Relations
+  semester        Semester @relation(fields: [semesterId], references: [id], onDelete: Restrict)
+  subject         Subject  @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  batch           Batch    @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  room            Room     @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  assignedFaculty Faculty? @relation(fields: [assignedFacultyId], references: [id], onDelete: SetNull)
+
+  @@index([semesterId])
+  @@index([status])
+  @@index([assignedFacultyId])
+  @@index([batchId])
+  @@index([subjectId])
+}
+
+model AllocationRun {
+  id          String              @id @default(cuid())
+  semesterId  String
+  runByUserId String
+  runAt       DateTime            @default(now())
+  status      AllocationRunStatus
+  summaryJson Json                // { total, fulfilled, unfulfilled, conflicts, perFacultyLoad, conflictReasons }
+
+  // Relations
+  semester Semester @relation(fields: [semesterId], references: [id], onDelete: Restrict)
+  runByUser User    @relation(fields: [runByUserId], references: [id], onDelete: Restrict)
+
+  @@index([semesterId])
+  @@index([runAt])
+}
+
+// ============================================================================
+// AUDIT LOG (manual overrides)
+// ============================================================================
+
+model AuditLog {
+  id               String   @id @default(cuid())
+  userId           String
+  action           String   // e.g. "MANUAL_ASSIGN", "MANUAL_REASSIGN"
+  entityType       String   // e.g. "ClassRequirement"
+  entityId         String
+  previousValues   Json?    // Before state
+  newValues        Json?    // After state
+  reason           String?  // Optional admin note
+  createdAt        DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
