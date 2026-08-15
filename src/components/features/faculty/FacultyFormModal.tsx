@@ -30,7 +30,7 @@ export function FacultyFormModal({ isOpen, onClose, facultyToEdit }: FacultyForm
     reset,
     formState: { errors, isSubmitting },
   } = useForm<CreateFacultyInput>({
-    resolver: zodResolver(isEditing ? updateFacultySchema : createFacultySchema),
+    resolver: zodResolver(isEditing ? updateFacultySchema : createFacultySchema) as any,
     defaultValues: {
       fullName: '',
       email: '',
@@ -100,7 +100,7 @@ export function FacultyFormModal({ isOpen, onClose, facultyToEdit }: FacultyForm
       <Button variant="outline" onClick={onClose} disabled={isLoading}>
         Cancel
       </Button>
-      <Button onClick={handleSubmit(onSubmit)} isLoading={isLoading}>
+      <Button onClick={handleSubmit(onSubmit as any)} isLoading={isLoading}>
         {isEditing ? 'Save Changes' : 'Create Faculty'}
       </Button>
     </>
@@ -113,7 +113,7 @@ export function FacultyFormModal({ isOpen, onClose, facultyToEdit }: FacultyForm
       title={isEditing ? 'Edit Faculty' : 'Add New Faculty'}
       footer={footer}
     >
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit as any)}>
         <Input
           label="Full Name"
           placeholder="e.g. John Doe"

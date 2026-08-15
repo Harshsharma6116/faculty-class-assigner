@@ -31,7 +31,7 @@ export function BatchFormModal({ isOpen, onClose, batchToEdit }: BatchFormModalP
     reset,
     formState: { errors, isSubmitting },
   } = useForm<CreateBatchInput>({
-    resolver: zodResolver(isEditing ? updateBatchSchema as any : createBatchSchema),
+    resolver: zodResolver(isEditing ? updateBatchSchema as any : createBatchSchema) as any,
     defaultValues: {
       name: '',
       departmentId: '',
@@ -100,7 +100,7 @@ export function BatchFormModal({ isOpen, onClose, batchToEdit }: BatchFormModalP
       title={isEditing ? 'Edit Batch' : 'Add New Batch'}
       footer={footer}
     >
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit as any)}>
         <Input
           label="Batch Name"
           placeholder="e.g. CSE-3A"
@@ -114,27 +114,21 @@ export function BatchFormModal({ isOpen, onClose, batchToEdit }: BatchFormModalP
               label="Department"
               {...register('departmentId')}
               error={errors.departmentId?.message}
-            >
-              <option value="">Select Department</option>
-              {departments.map((dept: any) => (
-                <option key={dept.id} value={dept.id}>
-                  {dept.name}
-                </option>
-              ))}
-            </Select>
+              options={[
+                { label: 'Select Department', value: '' },
+                ...departments.map((dept: any) => ({ label: dept.name, value: dept.id }))
+              ]}
+            />
 
             <Select
               label="Semester"
               {...register('semesterId')}
               error={errors.semesterId?.message}
-            >
-              <option value="">Select Semester</option>
-              {semesters.map((sem: any) => (
-                <option key={sem.id} value={sem.id}>
-                  {sem.name}
-                </option>
-              ))}
-            </Select>
+              options={[
+                { label: 'Select Semester', value: '' },
+                ...semesters.map((sem: any) => ({ label: sem.name, value: sem.id }))
+              ]}
+            />
           </>
         )}
 
@@ -142,10 +136,11 @@ export function BatchFormModal({ isOpen, onClose, batchToEdit }: BatchFormModalP
           label="Degree Level"
           {...register('degreeLevel')}
           error={errors.degreeLevel?.message}
-        >
-          <option value="UG">UG</option>
-          <option value="PG">PG</option>
-        </Select>
+          options={[
+            { label: 'Undergraduate (UG)', value: 'UG' },
+            { label: 'Postgraduate (PG)', value: 'PG' }
+          ]}
+        />
 
         <Input
           label="Year / Semester Number"

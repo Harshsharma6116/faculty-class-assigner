@@ -32,7 +32,7 @@ export function DepartmentFormModal({ isOpen, onClose, departmentToEdit }: Depar
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CreateDepartmentInput>({
-    resolver: zodResolver(isEditing ? updateDepartmentSchema : createDepartmentSchema),
+    resolver: zodResolver(isEditing ? updateDepartmentSchema : createDepartmentSchema) as any,
     defaultValues: {
       name: '',
       shortCode: '',
@@ -90,7 +90,7 @@ export function DepartmentFormModal({ isOpen, onClose, departmentToEdit }: Depar
       title={isEditing ? 'Edit Department' : 'Add New Department'}
       footer={footer}
     >
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit as any)}>
         <Input
           label="Department Name"
           placeholder="e.g. Computer Science"

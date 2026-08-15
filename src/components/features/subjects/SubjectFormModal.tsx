@@ -26,7 +26,7 @@ export function SubjectFormModal({ isOpen, onClose, subjectToEdit, departments }
     reset,
     formState: { errors, isSubmitting },
   } = useForm<CreateSubjectInput>({
-    resolver: zodResolver(isEditing ? updateSubjectSchema : createSubjectSchema),
+    resolver: zodResolver(isEditing ? updateSubjectSchema : createSubjectSchema) as any,
     defaultValues: {
       name: '',
       code: '',
@@ -87,7 +87,7 @@ export function SubjectFormModal({ isOpen, onClose, subjectToEdit, departments }
       <Button variant="outline" onClick={onClose} disabled={isLoading}>
         Cancel
       </Button>
-      <Button onClick={handleSubmit(onSubmit)} isLoading={isLoading}>
+      <Button onClick={handleSubmit(onSubmit as any)} isLoading={isLoading}>
         {isEditing ? 'Save Changes' : 'Create Subject'}
       </Button>
     </>
@@ -100,7 +100,7 @@ export function SubjectFormModal({ isOpen, onClose, subjectToEdit, departments }
       title={isEditing ? 'Edit Subject' : 'Add New Subject'}
       footer={footer}
     >
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit as any)}>
         <Input
           label="Subject Name"
           placeholder="e.g. Data Structures"

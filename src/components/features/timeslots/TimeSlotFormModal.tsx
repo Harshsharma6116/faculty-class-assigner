@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createTimeSlotSchema, updateTimeSlotSchema } from '@/lib/validators';
+import { createTimeSlotSchema, updateTimeSlotSchema, CreateTimeSlotInput } from '@/lib/validators/timeslot';
 import { Modal, Input, Button, Select } from '@/components/ui';
 import { useCreateTimeSlot, useUpdateTimeSlot, useSchools } from '@/hooks';
 
@@ -27,8 +27,8 @@ export function TimeSlotFormModal({ isOpen, onClose, timeSlotToEdit }: TimeSlotF
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm({
-    resolver: zodResolver(isEditing ? updateTimeSlotSchema : createTimeSlotSchema),
+  } = useForm<CreateTimeSlotInput>({
+    resolver: zodResolver(isEditing ? updateTimeSlotSchema : createTimeSlotSchema) as any,
     defaultValues: {
       dayOfWeek: 'MONDAY',
       periodNumber: 1,
@@ -84,7 +84,7 @@ export function TimeSlotFormModal({ isOpen, onClose, timeSlotToEdit }: TimeSlotF
       <Button variant="outline" onClick={onClose} disabled={isLoading}>
         Cancel
       </Button>
-      <Button onClick={handleSubmit(onSubmit)} isLoading={isLoading}>
+      <Button onClick={handleSubmit(onSubmit as any)} isLoading={isLoading}>
         {isEditing ? 'Save Changes' : 'Create Time Slot'}
       </Button>
     </>
@@ -97,34 +97,35 @@ export function TimeSlotFormModal({ isOpen, onClose, timeSlotToEdit }: TimeSlotF
       title={isEditing ? 'Edit Time Slot' : 'Add New Time Slot'}
       footer={footer}
     >
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit as any)}>
         {!isEditing && (
           <Select
             label="School"
             {...register('schoolId')}
             error={errors.schoolId?.message as string}
-          >
-            <option value="">Select School</option>
-            {schools.map((school: any) => (
-              <option key={school.id} value={school.id}>
-                {school.name}
-              </option>
-            ))}
-          </Select>
+            options={[
+              { label: 'Select School...', value: '' },
+              ...schools.map((school: any) => ({
+                label: school.name,
+                value: school.id,
+              })),
+            ]}
+          />
         )}
 
         <Select
           label="Day of Week"
           {...register('dayOfWeek')}
           error={errors.dayOfWeek?.message as string}
-        >
-          <option value="MONDAY">Monday</option>
-          <option value="TUESDAY">Tuesday</option>
-          <option value="WEDNESDAY">Wednesday</option>
-          <option value="THURSDAY">Thursday</option>
-          <option value="FRIDAY">Friday</option>
-          <option value="SATURDAY">Saturday</option>
-        </Select>
+          options={[
+            { label: 'Monday', value: 'MONDAY' },
+            { label: 'Tuesday', value: 'TUESDAY' },
+            { label: 'Wednesday', value: 'WEDNESDAY' },
+            { label: 'Thursday', value: 'THURSDAY' },
+            { label: 'Friday', value: 'FRIDAY' },
+            { label: 'Saturday', value: 'SATURDAY' },
+          ]}
+        />
 
         <Input
           label="Period Number"

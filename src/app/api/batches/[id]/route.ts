@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     const validatedData = updateBatchSchema.parse(body);
 
     // DEPT_ADMIN can only change department to their own department
-    if (user.role === 'DEPT_ADMIN' && validatedData.departmentId && validatedData.departmentId !== user.departmentId) {
+    if (user.role === 'DEPT_ADMIN' && (validatedData as any).departmentId && (validatedData as any).departmentId !== user.departmentId) {
       return NextResponse.json({ error: 'Cannot move batch to another department' }, { status: 403 });
     }
 

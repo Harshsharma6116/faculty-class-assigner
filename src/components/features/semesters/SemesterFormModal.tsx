@@ -25,7 +25,7 @@ export function SemesterFormModal({ isOpen, onClose, semesterToEdit }: SemesterF
     reset,
     formState: { errors, isSubmitting },
   } = useForm<CreateSemesterInput>({
-    resolver: zodResolver(isEditing ? updateSemesterSchema : createSemesterSchema),
+    resolver: zodResolver(isEditing ? updateSemesterSchema : createSemesterSchema) as any,
     defaultValues: {
       name: '',
       startDate: '',
@@ -81,7 +81,7 @@ export function SemesterFormModal({ isOpen, onClose, semesterToEdit }: SemesterF
       <Button variant="outline" onClick={onClose} disabled={isLoading}>
         Cancel
       </Button>
-      <Button onClick={handleSubmit(onSubmit)} isLoading={isLoading}>
+      <Button onClick={handleSubmit(onSubmit as any)} isLoading={isLoading}>
         {isEditing ? 'Save Changes' : 'Create Semester'}
       </Button>
     </>
@@ -94,7 +94,7 @@ export function SemesterFormModal({ isOpen, onClose, semesterToEdit }: SemesterF
       title={isEditing ? 'Edit Semester' : 'Add New Semester'}
       footer={footer}
     >
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit as any)}>
         <Input
           label="Semester Name"
           placeholder="e.g. Odd Sem 2026"

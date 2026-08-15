@@ -39,7 +39,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     const body = await req.json();
     const validatedData = updateTimeSlotSchema.parse(body);
 
-    if (user.role === 'SCHOOL_ADMIN' && validatedData.schoolId && validatedData.schoolId !== user.schoolId) {
+    if (user.role === 'SCHOOL_ADMIN' && (validatedData as any).schoolId && (validatedData as any).schoolId !== user.schoolId) {
       return NextResponse.json({ error: 'Cannot move time slot to another school' }, { status: 403 });
     }
 

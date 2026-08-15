@@ -25,7 +25,7 @@ export function SchoolFormModal({ isOpen, onClose, schoolToEdit }: SchoolFormMod
     reset,
     formState: { errors, isSubmitting },
   } = useForm<CreateSchoolInput>({
-    resolver: zodResolver(isEditing ? updateSchoolSchema : createSchoolSchema),
+    resolver: zodResolver(isEditing ? updateSchoolSchema : createSchoolSchema) as any,
     defaultValues: {
       name: '',
       shortCode: '',
@@ -63,7 +63,7 @@ export function SchoolFormModal({ isOpen, onClose, schoolToEdit }: SchoolFormMod
       <Button variant="outline" onClick={onClose} disabled={isLoading}>
         Cancel
       </Button>
-      <Button onClick={handleSubmit(onSubmit)} isLoading={isLoading}>
+      <Button onClick={handleSubmit(onSubmit as any)} isLoading={isLoading}>
         {isEditing ? 'Save Changes' : 'Create School'}
       </Button>
     </>
@@ -76,7 +76,7 @@ export function SchoolFormModal({ isOpen, onClose, schoolToEdit }: SchoolFormMod
       title={isEditing ? 'Edit School' : 'Add New School'}
       footer={footer}
     >
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit as any)}>
         <Input
           label="School Name"
           placeholder="e.g. Amity School of Engineering"

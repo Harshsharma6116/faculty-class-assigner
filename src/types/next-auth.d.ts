@@ -20,6 +20,13 @@ declare module 'next-auth' {
       departmentId: string | null;
     } & DefaultSession['user'];
   }
+
+  interface User {
+    id: string;
+    role: UserRole;
+    schoolId: string | null;
+    departmentId: string | null;
+  }
 }
 
 declare module 'next-auth/jwt' {

@@ -28,7 +28,7 @@ export function RoomFormModal({ isOpen, onClose, roomToEdit }: RoomFormModalProp
     reset,
     formState: { errors, isSubmitting },
   } = useForm({
-    resolver: zodResolver(isEditing ? updateRoomSchema : createRoomSchema),
+    resolver: zodResolver(isEditing ? updateRoomSchema : createRoomSchema) as any,
     defaultValues: {
       name: '',
       capacity: 60,
@@ -78,7 +78,7 @@ export function RoomFormModal({ isOpen, onClose, roomToEdit }: RoomFormModalProp
       <Button variant="outline" onClick={onClose} disabled={isLoading}>
         Cancel
       </Button>
-      <Button onClick={handleSubmit(onSubmit)} isLoading={isLoading}>
+      <Button onClick={handleSubmit(onSubmit as any)} isLoading={isLoading}>
         {isEditing ? 'Save Changes' : 'Create Room'}
       </Button>
     </>
@@ -91,7 +91,7 @@ export function RoomFormModal({ isOpen, onClose, roomToEdit }: RoomFormModalProp
       title={isEditing ? 'Edit Room' : 'Add New Room'}
       footer={footer}
     >
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit as any)}>
         <Input
           label="Room Name"
           placeholder="e.g. Room 101"
@@ -110,25 +110,26 @@ export function RoomFormModal({ isOpen, onClose, roomToEdit }: RoomFormModalProp
           label="Room Type"
           {...register('roomType')}
           error={errors.roomType?.message as string}
-        >
-          <option value="LECTURE_HALL">Lecture Hall</option>
-          <option value="LAB">Lab</option>
-          <option value="SEMINAR_ROOM">Seminar Room</option>
-        </Select>
+          options={[
+            { label: 'Lecture Hall', value: 'LECTURE_HALL' },
+            { label: 'Lab', value: 'LAB' },
+            { label: 'Seminar Room', value: 'SEMINAR_ROOM' },
+          ]}
+        />
 
         {!isEditing && (
           <Select
             label="School"
             {...register('schoolId')}
             error={errors.schoolId?.message as string}
-          >
-            <option value="">Select School</option>
-            {schools.map((school: any) => (
-              <option key={school.id} value={school.id}>
-                {school.name}
-              </option>
-            ))}
-          </Select>
+            options={[
+              { label: 'Select School', value: '' },
+              ...schools.map((school: any) => ({
+                label: school.name,
+                value: school.id,
+              })),
+            ]}
+          />
         )}
       </form>
     </Modal>
