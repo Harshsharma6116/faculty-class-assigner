@@ -42,12 +42,17 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const result = await signIn('credentials', {
+      const payload: Record<string, any> = {
         email: data.email,
         password: data.password,
-        turnstileToken: turnstileToken,
         redirect: false,
-      });
+      };
+      
+      if (turnstileToken) {
+        payload.turnstileToken = turnstileToken;
+      }
+
+      const result = await signIn('credentials', payload);
 
       if (result?.error) {
         if (result.error === 'TURNSTILE_REQUIRED') {

@@ -39,7 +39,11 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
-        const turnstileToken = credentials.turnstileToken;
+        // NextAuth serializes all payload fields to strings, so null becomes "null"
+        let turnstileToken = credentials.turnstileToken;
+        if (turnstileToken === 'null' || turnstileToken === 'undefined' || turnstileToken === '') {
+          turnstileToken = undefined;
+        }
 
         // Rate Limiting Check
         const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
