@@ -157,6 +157,7 @@ model Faculty {
   // Relations
   department          Department                @relation(fields: [departmentId], references: [id], onDelete: Restrict)
   preferredSubjects   FacultyPreferredSubject[]
+  preferredBatches    FacultyPreferredBatch[]
   unavailability      FacultyUnavailability[]
   classRequirements   ClassRequirement[]
 
@@ -253,6 +254,7 @@ model Batch {
   department        Department         @relation(fields: [departmentId], references: [id], onDelete: Restrict)
   semester          Semester           @relation(fields: [semesterId], references: [id], onDelete: Restrict)
   classRequirements ClassRequirement[]
+  preferredBy       FacultyPreferredBatch[]
 
   @@unique([semesterId, name]) // Batch name unique within a semester
   @@index([departmentId])
@@ -378,4 +380,23 @@ model AuditLog {
   @@index([userId])
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+// ============================================================================
+// FACULTY BATCH PREFERENCES
+// ============================================================================
+
+model FacultyPreferredBatch {
+  id             String @id @default(cuid())
+  facultyId      String
+  batchId        String
+  preferenceRank Int    // 1 = most preferred
+
+  // Relations
+  faculty Faculty @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  batch   Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([facultyId, batchId])
+  @@index([facultyId])
+  @@index([batchId])
 }

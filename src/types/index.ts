@@ -109,6 +109,7 @@ export interface AllocationFaculty {
   dailyAvailableTo: string | null;
   unavailableDates: Array<{ startDate: Date; endDate: Date }>;
   preferredSubjects: Array<{ subjectId: string; preferenceRank: number }>;
+  preferredBatches: Array<{ batchId: string; preferenceRank: number }>;
 }
 
 export interface AllocationTimeSlot {
