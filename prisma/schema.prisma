@@ -400,3 +400,18 @@ model FacultyPreferredBatch {
   @@index([facultyId])
   @@index([batchId])
 }
+
+// ============================================================================
+// RATE LIMITING & SECURITY
+// ============================================================================
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ipAddress String
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([ipAddress, createdAt])
+}

@@ -18,21 +18,69 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email', placeholder: 'admin@example.com' },
         password: { label: 'Password', type: 'password' },
+        turnstileToken: { label: 'Turnstile Token', type: 'text' },
       },
 
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         // Validate that both fields were provided
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email and password are required');
         }
 
+        const email = credentials.email.toLowerCase().trim();
+        
+        // Extract IP address from request headers
+        // NextAuth req.headers is a Record<string, string> in this context
+        let ip = 'unknown';
+        if (req?.headers) {
+          const forwarded = req.headers['x-forwarded-for'];
+          if (typeof forwarded === 'string') {
+            ip = forwarded.split(',')[0].trim();
+          }
+        }
+
+        const turnstileToken = credentials.turnstileToken;
+
+        // Rate Limiting Check
+        const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+        const recentAttempts = await prisma.loginAttempt.count({
+          where: {
+            OR: [{ email }, { ipAddress: ip }],
+            createdAt: { gte: fifteenMinsAgo },
+            success: false,
+          }
+        });
+
+        if (recentAttempts > 10) {
+          throw new Error('Too many attempts. Please try again later.');
+        }
+
+        if (recentAttempts > 3 && !turnstileToken) {
+          throw new Error('TURNSTILE_REQUIRED');
+        }
+
+        // Verify Turnstile if provided
+        if (turnstileToken) {
+          const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `secret=${process.env.TURNSTILE_SECRET_KEY}&response=${turnstileToken}&remoteip=${ip}`
+          });
+          const verifyData = await verifyRes.json();
+          if (!verifyData.success) {
+            throw new Error('Verification failed. Please try again.');
+          }
+        }
+
         // Look up the user by email
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase().trim() },
+          where: { email },
         });
 
         if (!user) {
-          throw new Error('Invalid email or password');
+          // Log failed attempt without revealing user existence
+          await prisma.loginAttempt.create({ data: { email, ipAddress: ip, success: false } });
+          throw new Error('Unable to sign in. Please verify your details and try again.');
         }
 
         // Verify the password against the stored hash
@@ -42,8 +90,13 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!isPasswordValid) {
-          throw new Error('Invalid email or password');
+          // Log failed attempt
+          await prisma.loginAttempt.create({ data: { email, ipAddress: ip, success: false } });
+          throw new Error('Unable to sign in. Please verify your details and try again.');
         }
+
+        // Log successful attempt
+        await prisma.loginAttempt.create({ data: { email, ipAddress: ip, success: true } });
 
         // Return the user object that NextAuth will pass to the jwt callback.
         // Only include fields we need — never return the hashed password.
