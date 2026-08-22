@@ -19,6 +19,8 @@ interface SidebarProps {
   role: 'SUPER_ADMIN' | 'SCHOOL_ADMIN' | 'DEPT_ADMIN';
 }
 
+import Image from 'next/image';
+
 export function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
 
@@ -38,11 +40,16 @@ export function Sidebar({ role }: SidebarProps) {
   const visibleLinks = allLinks.filter((link) => link.roles.includes(role));
 
   return (
-    <aside className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 hidden md:flex flex-col">
-      <div className="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-800">
-        <span className="text-xl font-bold text-gray-900 dark:text-white truncate">
-          Class Assigner
-        </span>
+    <aside className="w-64 bg-card/60 backdrop-blur-2xl border-r border-border hidden md:flex flex-col z-20">
+      <div className="h-24 flex flex-col items-center justify-center border-b border-border/50 bg-gradient-to-b from-primary/10 to-transparent">
+        <div className="flex flex-col items-center">
+          <span className="text-[1.75rem] font-bold text-foreground leading-none tracking-tight drop-shadow-sm" style={{ fontFamily: 'var(--font-heading)' }}>
+            syncadia
+          </span>
+          <span className="text-[0.65rem] font-bold text-primary tracking-[0.3em] uppercase mt-1.5 opacity-90">
+            grid
+          </span>
+        </div>
       </div>
       <div className="flex-1 py-4 overflow-y-auto">
         <nav className="space-y-1 px-3">
@@ -54,15 +61,15 @@ export function Sidebar({ role }: SidebarProps) {
                 href={link.href}
                 className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                   isActive
-                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200'
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white'
+                    ? 'bg-primary/20 text-primary-foreground dark:text-primary-foreground shadow-sm'
+                    : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground'
                 }`}
               >
                 <link.icon
                   className={`mr-3 flex-shrink-0 h-5 w-5 ${
                     isActive
-                      ? 'text-blue-700 dark:text-blue-200'
-                      : 'text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-300'
+                      ? 'text-primary'
+                      : 'text-muted-foreground group-hover:text-foreground'
                   }`}
                   aria-hidden="true"
                 />

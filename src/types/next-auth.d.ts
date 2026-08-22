@@ -15,17 +15,19 @@ declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
-      role: UserRole;
+      role: UserRole | 'FACULTY';
       schoolId: string | null;
       departmentId: string | null;
+      avatarUrl?: string | null;
     } & DefaultSession['user'];
   }
 
-  interface User {
+  interface User extends DefaultUser {
     id: string;
-    role: UserRole;
+    role: UserRole | 'FACULTY';
     schoolId: string | null;
     departmentId: string | null;
+    avatarUrl?: string | null;
   }
 }
 
@@ -36,7 +38,7 @@ declare module 'next-auth/jwt' {
    */
   interface JWT {
     id: string;
-    role: UserRole;
+    role: UserRole | 'FACULTY';
     schoolId: string | null;
     departmentId: string | null;
   }

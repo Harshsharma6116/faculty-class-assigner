@@ -1,68 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { requireAuth, scopeFilterForFaculty } from '@/lib/auth/helpers';
-import { createFacultyUnavailabilitySchema } from '@/lib/validators';
-import { handleApiError, ApiError } from '@/lib/auth/api-error';
+import { requireAuth } from '@/lib/auth/helpers';
+import { createFacultyUnavailabilitySchema } from '@/lib/validators/faculty';
+import { handleApiError } from '@/lib/auth/api-error';
 
-interface RouteContext {
-  params: Promise<{ id: string }>;
-}
-
-async function verifyAccess(id: string, user: any) {
-  const faculty = await prisma.faculty.findFirst({
-    where: { id, ...scopeFilterForFaculty(user) },
-  });
-  if (!faculty) {
-    throw new ApiError(404, 'Faculty not found or access denied');
-  }
-  return faculty;
-}
-
-export async function GET(req: NextRequest, { params }: RouteContext) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAuth();
     const { id } = await params;
-    const user = await requireAuth();
-    await verifyAccess(id, user);
-
+    
     const unavailability = await prisma.facultyUnavailability.findMany({
       where: { facultyId: id },
-      orderBy: {
-        startDate: 'asc',
-      },
+      orderBy: { startDate: 'asc' }
     });
-
+    
     return NextResponse.json(unavailability);
   } catch (error) {
     return handleApiError(error);
   }
 }
 
-export async function POST(req: NextRequest, { params }: RouteContext) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params;
     const user = await requireAuth(['SUPER_ADMIN', 'SCHOOL_ADMIN', 'DEPT_ADMIN']);
-    await verifyAccess(id, user);
-
+    const { id } = await params;
     const body = await req.json();
     const validatedData = createFacultyUnavailabilitySchema.parse(body);
 
-    const startDate = new Date(validatedData.startDate);
-    const endDate = new Date(validatedData.endDate);
+    const faculty = await prisma.faculty.findUnique({ where: { id } });
+    if (!faculty) return NextResponse.json({ error: 'Faculty not found' }, { status: 404 });
 
-    if (endDate < startDate) {
-      throw new ApiError(400, 'End date cannot be before start date');
+    if (user.role === 'DEPT_ADMIN' && user.departmentId !== faculty.departmentId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const unavailability = await prisma.facultyUnavailability.create({
-      data: {
+    const start = new Date(validatedData.startDate);
+    const end = new Date(validatedData.endDate);
+
+    const overlapping = await prisma.facultyUnavailability.findFirst({
+      where: {
         facultyId: id,
-        startDate,
-        endDate,
-        reason: validatedData.reason,
-      },
+        startDate: { lte: end },
+        endDate: { gte: start }
+      }
     });
 
-    return NextResponse.json(unavailability, { status: 201 });
+    if (overlapping) {
+      return NextResponse.json({ error: 'This period overlaps with an existing unavailability block.' }, { status: 400 });
+    }
+
+    const record = await prisma.facultyUnavailability.create({
+      data: {
+        facultyId: id,
+        startDate: start,
+        endDate: end,
+        reason: validatedData.reason
+      }
+    });
+
+    return NextResponse.json(record, { status: 201 });
   } catch (error) {
     return handleApiError(error);
   }

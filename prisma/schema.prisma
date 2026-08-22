@@ -79,6 +79,7 @@ model User {
   name           String
   hashedPassword String
   role           UserRole
+  avatarUrl      String?   // Added for Profile Editor
   schoolId       String?   // Set for SCHOOL_ADMIN (scoped to one school)
   departmentId   String?   // Set for DEPT_ADMIN (scoped to one department)
   createdAt      DateTime  @default(now())
@@ -141,6 +142,7 @@ model Faculty {
   id                         String        @id @default(cuid())
   fullName                   String
   email                      String        @unique
+  avatarUrl                  String?       // Added for Profile Editor
   departmentId               String
   seniorityLevel             SeniorityLevel
   maxClassesPerDay           Int           @default(5)
@@ -151,6 +153,7 @@ model Faculty {
   dailyAvailableFrom         String?       // Time string "HH:MM", null = use institution default
   dailyAvailableTo           String?       // Time string "HH:MM", null = use institution default
   isActive                   Boolean       @default(true)
+  hashedPassword             String?       // Allow faculty login. Nullable for backward compatibility
   createdAt                  DateTime      @default(now())
   updatedAt                  DateTime      @updatedAt
 

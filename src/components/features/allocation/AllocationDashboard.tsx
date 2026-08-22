@@ -177,7 +177,7 @@ export function AllocationDashboard() {
   return (
     <div className="space-y-6">
       {/* Dashboard Top Action Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 bg-card/40 backdrop-blur-xl border border-border/50 rounded-xl shadow-xs relative overflow-hidden">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Class Allocation Control</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -255,7 +255,7 @@ export function AllocationDashboard() {
       {/* Stats Cards Section */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-xl shadow-xs flex items-center gap-4">
+        <div className="bg-card/40 backdrop-blur-xl border border-border/50 p-5 rounded-xl shadow-xs flex items-center gap-4 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
           <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400">
             <Layers className="w-6 h-6" />
           </div>
@@ -268,7 +268,7 @@ export function AllocationDashboard() {
         </div>
 
         {/* Card 2: Fulfilled */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-xl shadow-xs flex items-center gap-4">
+        <div className="bg-card/40 backdrop-blur-xl border border-border/50 p-5 rounded-xl shadow-xs flex items-center gap-4 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
           <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-600 dark:text-green-400">
             <CheckCircle className="w-6 h-6" />
           </div>
@@ -281,7 +281,7 @@ export function AllocationDashboard() {
         </div>
 
         {/* Card 3: Unfulfilled */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-xl shadow-xs flex items-center gap-4">
+        <div className="bg-card/40 backdrop-blur-xl border border-border/50 p-5 rounded-xl shadow-xs flex items-center gap-4 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
           <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-500 dark:text-gray-400">
             <Activity className="w-6 h-6" />
           </div>
@@ -294,7 +294,7 @@ export function AllocationDashboard() {
         </div>
 
         {/* Card 4: Conflicts */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-xl shadow-xs flex items-center gap-4">
+        <div className="bg-card/40 backdrop-blur-xl border border-border/50 p-5 rounded-xl shadow-xs flex items-center gap-4 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
           <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-600 dark:text-red-400">
             <AlertTriangle className="w-6 h-6" />
           </div>
@@ -308,8 +308,8 @@ export function AllocationDashboard() {
       </div>
 
       {/* Tabs Switcher Layout */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-xs">
-        <div className="flex border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
+      <div className="bg-card/40 backdrop-blur-xl border border-border/50 rounded-xl overflow-hidden shadow-xs relative">
+        <div className="flex border-b border-border/50 overflow-x-auto">
           {[
             { id: 'requirements', label: 'Requirements List', icon: FileText },
             { id: 'timetable', label: 'Timetable Grid', icon: Calendar },

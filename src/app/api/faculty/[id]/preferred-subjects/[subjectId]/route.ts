@@ -1,51 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { requireAuth, scopeFilterForFaculty } from '@/lib/auth/helpers';
-import { handleApiError, ApiError } from '@/lib/auth/api-error';
+import { requireAuth } from '@/lib/auth/helpers';
+import { handleApiError } from '@/lib/auth/api-error';
 
-interface RouteContext {
-  params: Promise<{ id: string; subjectId: string }>;
-}
-
-async function verifyAccess(id: string, user: any) {
-  const faculty = await prisma.faculty.findFirst({
-    where: { id, ...scopeFilterForFaculty(user) },
-  });
-  if (!faculty) {
-    throw new ApiError(404, 'Faculty not found or access denied');
-  }
-  return faculty;
-}
-
-export async function DELETE(req: NextRequest, { params }: RouteContext) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string, subjectId: string }> }) {
   try {
-    const { id, subjectId } = await params;
     const user = await requireAuth(['SUPER_ADMIN', 'SCHOOL_ADMIN', 'DEPT_ADMIN']);
-    await verifyAccess(id, user);
+    const { id, subjectId } = await params;
 
-    const existing = await prisma.facultyPreferredSubject.findUnique({
-      where: {
-        facultyId_subjectId: {
-          facultyId: id,
-          subjectId: subjectId,
-        },
-      },
-    });
+    const faculty = await prisma.faculty.findUnique({ where: { id } });
+    if (!faculty) return NextResponse.json({ error: 'Faculty not found' }, { status: 404 });
 
-    if (!existing) {
-      throw new ApiError(404, 'Preferred subject not found');
+    if (user.role === 'DEPT_ADMIN' && user.departmentId !== faculty.departmentId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     await prisma.facultyPreferredSubject.delete({
       where: {
         facultyId_subjectId: {
           facultyId: id,
-          subjectId: subjectId,
-        },
-      },
+          subjectId: subjectId
+        }
+      }
     });
 
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ success: true });
   } catch (error) {
     return handleApiError(error);
   }

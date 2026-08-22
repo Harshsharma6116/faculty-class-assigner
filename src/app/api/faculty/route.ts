@@ -3,6 +3,7 @@ import prisma from '@/lib/db';
 import { requireAuth, scopeFilterForFaculty } from '@/lib/auth/helpers';
 import { createFacultySchema } from '@/lib/validators';
 import { handleApiError } from '@/lib/auth/api-error';
+import bcrypt from 'bcryptjs';
 
 export async function GET(req: NextRequest) {
   try {
@@ -68,8 +69,15 @@ export async function POST(req: NextRequest) {
         }
     }
 
+    // Set a default password for newly created faculty so they can log in to the portal
+    const defaultPassword = 'Amity@123';
+    const hashedPassword = await bcrypt.hash(defaultPassword, 12);
+
     const faculty = await prisma.faculty.create({
-      data: validatedData,
+      data: {
+        ...validatedData,
+        hashedPassword,
+      },
       include: {
         department: {
           select: { name: true, shortCode: true }

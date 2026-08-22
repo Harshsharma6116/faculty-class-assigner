@@ -30,6 +30,9 @@ export const createFacultyUnavailabilitySchema = z.object({
   startDate: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
   endDate: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
   reason: z.string().max(500).optional(),
+}).refine(data => new Date(data.startDate) <= new Date(data.endDate), {
+  message: "End date cannot be before start date",
+  path: ["endDate"]
 });
 
 export type CreateFacultyInput = z.infer<typeof createFacultySchema>;

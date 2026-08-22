@@ -32,7 +32,7 @@ import type { SessionUser } from '@/types';
  * const user = await requireAuth(['SUPER_ADMIN', 'SCHOOL_ADMIN']);
  * ```
  */
-export async function requireAuth(allowedRoles?: UserRole[]): Promise<SessionUser> {
+export async function requireAuth(allowedRoles?: (UserRole | 'FACULTY')[]): Promise<SessionUser> {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
